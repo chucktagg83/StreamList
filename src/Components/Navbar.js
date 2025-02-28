@@ -1,45 +1,52 @@
-// src/components/Navbar.js
+// src/Components/Navbar.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from './CartContext';
 import { useAuth } from './AuthContext';
-import { FaShoppingCart, FaSignOutAlt, FaUser } from 'react-icons/fa';
-import './Navbar.css';
+import { useCart } from './CartContext';
 
 const Navbar = () => {
-  const { cart } = useCart();
   const { user, logout } = useAuth();
+  const cart = useCart();
   
-  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
-  
+  // Safely access itemCount with a fallback to 0
+  const itemCount = cart?.itemCount || 0;
+
   return (
     <nav className="navbar">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
-          YourStore
-        </Link>
-        
-        <div className="navbar-links">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/about" className="nav-link">About</Link>
+      <div className="navbar-brand">
+        <Link to="/">EZTECH</Link>
+      </div>
+      
+      <div className="navbar-menu">
+        <Link to="/" className="navbar-item">Home</Link>
+        <Link to="/movies" className="navbar-item">Movies</Link>
+        <Link to="/about" className="navbar-item">About</Link>
+      </div>
+      
+      <div className="navbar-end">
+        <div className="navbar-item">
+          <Link to="/cart" className="cart-button">
+            Cart ({itemCount})
+          </Link>
         </div>
         
-        <div className="navbar-actions">
-          <div className="user-info">
-            <FaUser />
-            <span>{user?.name || 'User'}</span>
+        <div className="navbar-item user-menu">
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt={user.name} className="user-avatar" />
+          ) : (
+            <div className="user-avatar-placeholder">
+              {user?.name?.charAt(0) || 'U'}
+            </div>
+          )}
+          <span className="user-name">{user?.name}</span>
+          
+          <div className="dropdown-menu">
+            <Link to="/profile" className="dropdown-item">Profile</Link>
+            <Link to="/settings" className="dropdown-item">Settings</Link>
+            <button onClick={logout} className="dropdown-item logout-button">
+              Logout
+            </button>
           </div>
-          
-          <Link to="/cart" className="cart-icon-container">
-            <FaShoppingCart className="cart-icon" />
-            {cartItemCount > 0 && (
-              <span className="cart-count">{cartItemCount}</span>
-            )}
-          </Link>
-          
-          <button onClick={logout} className="logout-btn" aria-label="Logout">
-            <FaSignOutAlt />
-          </button>
         </div>
       </div>
     </nav>

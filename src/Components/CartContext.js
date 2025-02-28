@@ -1,10 +1,11 @@
 // src/Components/CartContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { toast } from 'react-toastify';
 
-// Create the context
+// Create context
 export const CartContext = createContext();
 
-// Create a custom hook to use the cart context
+// Custom hook to use the cart context
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -13,72 +14,129 @@ export const useCart = () => {
   return context;
 };
 
-// Create the cart provider
 export const CartProvider = ({ children }) => {
-  // Initialize cart state from localStorage if available
   const [cart, setCart] = useState(() => {
+    // Load cart from localStorage on initial render
     const savedCart = localStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
-
+  
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
-
-  // Add item to cart
+  
+  // Check if a product is a subscription (IDs 1-4)
+  const isSubscription = (productId) => {
+    return productId >= 1 && productId <= 4;
+  };
+  
+  // Check if a subscription product is already in the cart
+  const hasSubscriptionInCart = () => {
+    return cart.some(item => isSubscription(item.id));
+  };
+  
+  // Get the subscription in cart, if any
+  const getSubscriptionInCart = () => {
+    return cart.find(item => isSubscription(item.id));
+  };
+  
   const addToCart = (product) => {
+    // Check if product is a subscription
+    const productIsSubscription = isSubscription(product.id);
+    
+    // If it's a subscription and we already have one in the cart
+    if (productIsSubscription && hasSubscriptionInCart()) {
+      // Show popup notification
+      toast.warning(
+        <div className="subscription-toast">
+          <strong>A subscription is already in your cart!</strong>
+          <p>Only 1 subscription per person please!</p>
+        </div>, 
+        {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true
+        }
+      );
+      return false; // Return false to indicate the item wasn't added
+    }
+    
+    // Make sure we have all the required fields
+    const itemToAdd = {
+      id: product.id,
+      title: product.title || product.name || product.service || 'Product',
+      price: parseFloat(product.price) || 0,
+      image: product.image || product.poster || product.img || '',
+      quantity: product.quantity || 1,
+      isSubscription: productIsSubscription
+    };
+    
     setCart(prevCart => {
-      // Check if the item is already in the cart
-      const existingItem = prevCart.find(item => item.id === product.id);
+      // Check if item already exists in cart
+      const existingItemIndex = prevCart.findIndex(item => item.id === itemToAdd.id);
       
-      if (existingItem) {
-        // If item exists, increase quantity
-        return prevCart.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
+      if (existingItemIndex >= 0) {
+        // Update quantity if item exists
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex].quantity += itemToAdd.quantity;
+        return updatedCart;
       } else {
-        // If item doesn't exist, add it with quantity 1
-        return [...prevCart, { ...product, quantity: 1 }];
+        // Add new item if it doesn't exist
+        return [...prevCart, itemToAdd];
       }
     });
+    
+    // Show success toast
+    toast.success(`${itemToAdd.title} added to cart!`);
+    return true; // Return true to indicate the item was added successfully
   };
-
-  // Remove item from cart
-  const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
+  
+  const removeFromCart = (id) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== id));
   };
-
-  // Update item quantity
-  const updateQuantity = (productId, newQuantity) => {
+  
+  const updateQuantity = (id, quantity) => {
     setCart(prevCart => 
       prevCart.map(item => 
-        item.id === productId 
-          ? { ...item, quantity: newQuantity } 
-          : item
+        item.id === id ? { ...item, quantity } : item
       )
     );
   };
-
-  // Clear the entire cart
+  
   const clearCart = () => {
     setCart([]);
   };
-
-  // Value to be provided by the context
-  const value = {
-    cart,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart
+  
+  // Calculate total price
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
-
+  
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  
+  // Context value with all the functions and properties
+  const value = {
+    cart, 
+    addToCart, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart,
+    cartCount,
+    hasSubscriptionInCart,
+    getSubscriptionInCart,
+    isSubscription,
+    getTotalPrice,
+    itemCount: cartCount // Added for compatibility with the useCart hook
+  };
+  
   return (
     <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
 };
+

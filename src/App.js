@@ -1,69 +1,101 @@
 // src/App.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './Components/AuthContext';
 import { CartProvider } from './Components/CartContext';
-import { AuthProvider } from './Components/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Login from './Components/Login';
 import Navbar from './Components/Navbar';
-import Streamlist from './Components/StreamList';
+import StreamList from './Components/StreamList';
+import Movies from './Components/Movies';
 import About from './Components/About';
 import Cart from './Components/Cart';
-import Login from './Components/Login';
-import PrivateRoute from './Components/PrivateRoute';
-import { useAuth } from './Components/AuthContext';
+import './App.css';
 
-// This component decides whether to show the login page or redirect to home
-const LoginRoute = () => {
-  const { user } = useAuth();
-  return user ? <Navigate to="/" /> : <Login onLogin={() => {}} />;
+// Loading component
+const LoadingScreen = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh',
+    flexDirection: 'column'
+  }}>
+    <div>Loading...</div>
+  </div>
+);
+
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingScreen />;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
 };
 
-function App() {
+// Main app content with routing
+function AppContent() {
+  const { user, login, loading } = useAuth();
+  
+  // Show loading screen while auth state is being determined
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<LoginRoute />} />
-            <Route path="/*" element={<ProtectedApp />} />
-          </Routes>
-          <ToastContainer position="top-center" />
-        </Router>
-      </CartProvider>
-    </AuthProvider>
+    <Router>
+      {user && <Navbar />}
+      <Routes>
+        <Route path="/login" element={
+          user ? <Navigate to="/" /> : <Login onLogin={login} />
+        } />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <StreamList />
+          </ProtectedRoute>
+        } />
+        <Route path="/movies" element={
+          <ProtectedRoute>
+            <Movies />
+          </ProtectedRoute>
+        } />
+        <Route path="/about" element={
+          <ProtectedRoute>
+            <About />
+          </ProtectedRoute>
+        } />
+        <Route path="/cart" element={
+          <ProtectedRoute>
+            <Cart />
+          </ProtectedRoute>
+        } />
+        {/* Add a catch-all route */}
+        <Route path="*" element={user ? <Navigate to="/" /> : <Navigate to="/login" />} />
+      </Routes>
+      <ToastContainer position="bottom-right" />
+    </Router>
   );
 }
 
-// This component contains all the protected routes
-const ProtectedApp = () => {
-  const { logout } = useAuth();
-  
+// Main App component
+function App() {
   return (
-    <div className="app">
-      <Navbar onLogout={logout} />
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={
-            <PrivateRoute>
-              <Streamlist />
-            </PrivateRoute>
-          } />
-          <Route path="/about" element={
-            <PrivateRoute>
-              <About />
-            </PrivateRoute>
-          } />
-          <Route path="/cart" element={
-            <PrivateRoute>
-              <Cart />
-            </PrivateRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </main>
+    <div className="App">
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
     </div>
   );
-};
+}
 
 export default App;

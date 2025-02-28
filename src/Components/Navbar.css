@@ -1,11 +1,14 @@
-/* Enhanced Navbar Styles */
+@import url('https://fonts.googleapis.com/css2?family=Honk&display=swap');
+
 .navbar {
   display: flex;
+  font-family: 'Honk', sans-serif;
+  font-size: large;
   justify-content: space-between;
   align-items: center;
   background-color: #333;
   padding: 0.8rem 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(163, 129, 129, 0.1);
 }
 
 .navbar-logo a {
@@ -14,6 +17,7 @@
 }
 
 .navbar-logo h1 {
+  font-family: Honk, sans-serif;
   font-size: 1.8rem;
   margin: 0;
   color: #4a6cf7;
@@ -127,7 +131,6 @@
   opacity: 1;
 }
 
-/* Add this to your existing media queries for responsiveness */
 @media (max-width: 768px) {
   .user-info span {
     display: none;
