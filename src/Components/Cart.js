@@ -1,8 +1,8 @@
-// Cart.js
+// src/Components/Cart.js
 import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Make sure useNavigate is imported
 import { CartContext } from './CartContext';
-import { FaTrashAlt, FaPlus, FaMinus, FaShoppingCart, FaArrowLeft, FaEraser } from 'react-icons/fa';
+import { FaTrashAlt, FaPlus, FaMinus, FaShoppingCart, FaArrowLeft, FaEraser, FaCreditCard } from 'react-icons/fa';
 import './Cart.css';
 
 const Cart = () => {
@@ -10,6 +10,7 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Calculate subtotal
   const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -36,6 +37,11 @@ const Cart = () => {
       setCouponDiscount(0);
       setCouponCode('');
     }
+  };
+
+  // Add this function to handle checkout
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
 
   return (
@@ -178,8 +184,13 @@ const Cart = () => {
                 )}
               </div>
               
-              <button className="checkout-btn">
-                Proceed to Checkout
+              {/* Updated checkout button with onClick handler */}
+              <button 
+                className="checkout-btn"
+                onClick={handleCheckout}
+                disabled={cart.length === 0}
+              >
+                <FaCreditCard /> Proceed to Checkout
               </button>
               
               <div className="payment-methods">
@@ -190,7 +201,7 @@ const Cart = () => {
                   <span className="payment-icon">Amex</span>
                   <span className="payment-icon">PayPal</span>
                 </div>
-              </div>
+              </div> 
             </div>
           </div>
         )}
